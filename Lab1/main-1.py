@@ -1,16 +1,23 @@
 import time
 from machine import Pin
 
-def blink(l, t):
+def on(p):
+    p.low()
+
+def off(p):
+    p.high()
+
+def blink3(l, t):
     for i in range(3):
-        l.low()
+        on(l)
         time.sleep_ms(t)
-        l.high()
+        off(l)
         time.sleep_ms(t)
 
 p = Pin(2, Pin.OUT)
+
 while True:
-    blink(p, 300)
-    blink(p, 600)
-    blink(p, 300)
+    blink3(p, 300)
+    blink3(p, 600)
+    blink3(p, 300)
     time.sleep_ms(5000)
