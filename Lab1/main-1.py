@@ -1,23 +1,35 @@
-import time
+# morse code for SOS is:
+# dot x 3, dash x 3, dot x 3
+#   (S)      (O)      (S)
+
+from time import sleep_ms
 from machine import Pin
 
-def on(p):
-    p.low()
+def on(l):
+    l.low()
 
-def off(p):
-    p.high()
+def off(l):
+    l.high()
 
-def blink3(l, t):
+def blink3x(l, t):
     for i in range(3):
         on(l)
-        time.sleep_ms(t)
+        sleep_ms(t)
         off(l)
-        time.sleep_ms(t)
+        sleep_ms(t)
 
-p = Pin(2, Pin.OUT)
+# ===========================================================
+led1 = Pin(2, Pin.OUT)
 
 while True:
-    blink3(p, 300)
-    blink3(p, 600)
-    blink3(p, 300)
-    time.sleep_ms(5000)
+    # blinks the ...
+    blink3x(led1, 300)
+
+    # blinks the ---
+    blink3x(led1, 600)
+
+    # blinks the ..., again
+    blink3x(led1, 300)
+
+    # and some break
+    sleep_ms(5000)

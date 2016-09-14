@@ -1,24 +1,27 @@
-import time
+from time import sleep_ms
 from machine import Pin
 
-def on(p):
-    p.low()
+def on(l):
+    l.low()
 
-def off(p):
-    p.high()
+def off(l):
+    l.high()
 
-def togglep0():
+def blinkLED0():
+    # blink LED #0 in the inner loop (faster)
     for i in range(5):
-        on(p0)
-        time.sleep_ms(100)
-        off(p0)
-        time.sleep_ms(100)
+        on(led0)
+        sleep_ms(100)
+        off(led0)
+        sleep_ms(100)
 
-p0 = Pin(0, Pin.OUT)
-p2 = Pin(2, Pin.OUT)
+# ===========================================================
+led0 = Pin(0, Pin.OUT)
+led1 = Pin(2, Pin.OUT)
 
+# blink LED #1 in the outer loop (slower)
 while True:
-    on(p2)
-    togglep0()
-    off(p2)
-    togglep0()
+    on(led1)
+    blinkLED0()
+    off(led1)
+    blinkLED0()
