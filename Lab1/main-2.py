@@ -11,9 +11,9 @@ def blinkLED0():
     # blink LED #0 in the inner loop (faster)
     for i in range(5):
         on(led0)
-        sleep_ms(100)
+        sleep_ms(50)
         off(led0)
-        sleep_ms(100)
+        sleep_ms(50)
 
 # ===========================================================
 led0 = Pin(0, Pin.OUT)
