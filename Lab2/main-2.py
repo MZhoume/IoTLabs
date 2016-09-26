@@ -10,7 +10,8 @@ from machine import PWM
 # interrupt function
 def button_pressed(p):
     global is_working
-    isworking = not is_working
+    is_working = not is_working
+    print(is_working)
 
 # global variable for determine if the program should run
 is_working = False
