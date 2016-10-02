@@ -152,11 +152,11 @@ while True:
     
     # compose right time and date to display
     if is_setting_alarm: 
-        time = 'AT: {}:{}:{} {}'.format(alarm_hh if alarm_hh >= 10 else '0{}'.format(alarm_hh), 
+        time = 'T: {}:{}:{} {}A'.format(alarm_hh if alarm_hh >= 10 else '0{}'.format(alarm_hh), 
             alarm_mm if alarm_mm >= 10 else '0{}'.format(alarm_mm), 
             alarm_ss if alarm_ss >= 10 else '0{}'.format(alarm_ss),
             '<' if part_changing < 3 else '')
-        date = 'AD: {}/{}/{} {}'.format(alarm_y % 2000, 
+        date = 'D: {}/{}/{} {}A'.format(alarm_y % 2000, 
             alarm_m if alarm_m >= 10 else '0{}'.format(alarm_m), 
             alarm_d if alarm_d >= 10 else '0{}'.format(alarm_d),
             '<' if part_changing > 2 else '')
@@ -184,7 +184,7 @@ while True:
 
     # draw indicator
     if is_setting_time or is_setting_alarm:
-        disp.text('^^', 24 * (part_changing % 3), 16)
+        disp.text('^^', 24 * (part_changing % 3 + 1), 16)
     
     # set display contrast with adc readout
     adc_val = adc.read()
