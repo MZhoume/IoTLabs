@@ -19,6 +19,7 @@
 - [x] Debug
 
 # Lab 3
+
 #### Progress
 - [x] Display on SSD1306
 - [x] Come up with buttons' functionalities
@@ -30,3 +31,12 @@
 - [x] Hook up ADXL345 and trying to get data
 - [x] Come up with the ways to scroll the text
 - [x] Make the text scroll according to the readouts from ADXL345
+
+# Lab 4
+
+#### Progress
+- [x] Set up Google api and apikey
+- [x] Set up weather api and apikey
+- [x] HTTP Get
+- [ ] HTTP POST
+- [x] SSL wrapped socket
