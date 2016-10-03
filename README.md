@@ -37,6 +37,6 @@
 #### Progress
 - [x] Set up Google api and apikey
 - [x] Set up weather api and apikey
-- [x] HTTP Get
-- [ ] HTTP POST
+- [x] HTTP Get from weather
+- [x] HTTP POST to google apis
 - [x] SSL wrapped socket
