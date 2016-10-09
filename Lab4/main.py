@@ -4,6 +4,7 @@ from Keys import *
 from machine import Pin
 from machine import I2C
 from ssd1306 import SSD1306_I2C
+from time import sleep_ms
 import json
 
 lat = '40.8608468'
@@ -30,6 +31,8 @@ def http_get(url):
             res.append(str(data, 'utf-8'))
         else:
             break
+
+    s.close()
     res = ''.join(res)
     i = res.index('{')
     return res[i:]
@@ -53,6 +56,7 @@ def http_post(url, payload, useJson):
             res.append(str(data, 'utf-8'))
         else:
             break
+    s.close()
     res = ''.join(res)
     print(res)
     if useJson:
@@ -63,7 +67,7 @@ def http_post(url, payload, useJson):
 
 def btn_b_pressed(p):
     print('button b pressed')
-    http_post(TWEET_CALL, '{"api_key": "%s", "status": "The weather here is %sF. Conditions: %s."}' % (THINGTWEET_API_KEY, weather_fahrenheit, weather_desc), False)
+    
 
 btn_b = Pin(2, Pin.IN, Pin.PULL_UP)
 btn_b.irq(trigger=Pin.IRQ_RISING, handler=btn_b_pressed)
@@ -74,18 +78,22 @@ disp.init_display()
 #
 ##--Get weather information for first time--##
 res = http_post(GEO_CALL, '{"considerIp": "true"}', True)
-locDic = json.loads(res)
+#locDic = json.loads(res)
 #Set location data
-lat = locDic['location']['lat']
-lng = locDic['location']['lng']
+#lat = locDic['location']['lat']
+#lng = locDic['location']['lng']
 
-weather_res = http_get(WEATHER_CALL)
-weatherDic = json.loads(weather_res)
+#weather_res = http_get(WEATHER_CALL)
+#weatherDic = json.loads(weather_res)
 
 #Get weather information
-weather_fahrenheit = int(weatherDic['main']['temp']*(9/5) - 459.67)
-weather_desc = weatherDic['weather'][0]['description']
+#weather_fahrenheit = int(weatherDic['main']['temp']*(9/5) - 459.67)
+#weather_desc = weatherDic['weather'][0]['description']
+#locStr = '%.2f %.2f' % (lat, lng)
+#disp.text(locStr, 0,0)
+#disp.text(weather_desc, 0, 24)
+#disp.show()
 
-disp.text('test', 0,0)
-disp.text(weather_desc, 0, 24)
-disp.show()
+http_post(TWEET_CALL, '{"api_key": "%s", "status": "The weather here is %sF. Conditions: %s."}' % (THINGTWEET_API_KEY, weather_fahrenheit, weather_desc), False)
+
+
