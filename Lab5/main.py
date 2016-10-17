@@ -8,6 +8,8 @@ from machine import Timer
 import gc
 
 disp_on = False
+disp_msg = False
+disp_time = False
 msg = ''
 
 def timer_callback(t):
@@ -17,8 +19,11 @@ def timer_callback(t):
     y, m, d, t1, hh, mm, ss, t2 = rtc.datetime()
     disp.fill(0)
     if disp_on:
-        disp.text('D:{}/{} | T:{}:{}'.format(m, d, mm, ss), 0, 0)
-        disp.text(msg, 0, 16)
+        disp.text('Lab 5 | Group 5', 0, 0)
+    if disp_time:
+        disp.text('D:{}/{} | T:{}:{}'.format(m, d, mm, ss), 0, 10)
+    if disp_msg:
+        disp.text(msg, 0, 20)
     disp.show()
 
 response = '''
@@ -50,10 +55,18 @@ while True:
     parts = req.decode('ascii').split(' ')
     if parts[1] == '/exit':
         break
-    elif parts[1] == '/turn%20off':
-        disp_on = False
     elif parts[1] == '/turn%20on':
         disp_on = True
+    elif parts[1] == '/turn%20off':
+        disp_on = False
+    elif parts[1] == '/display%20time':
+        disp_time = True
+    elif parts[1] == '/remove%20time':
+        disp_time = False
+    elif parts[1] == '/display%20message':
+        disp_msg = True
+    elif parts[1] == '/remove%20message':
+        disp_msg = False
     elif parts[1] == '/favicon.ico':
         pass
     else:
