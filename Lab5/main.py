@@ -50,11 +50,11 @@ while True:
     parts = req.decode('ascii').split(' ')
     if parts[1] == '/exit':
         break
-    elif parts[1] == '/off':
+    elif parts[1] == '/turn%20off':
         disp_on = False
-    elif parts[1] == '/on':
+    elif parts[1] == '/turn%20on':
         disp_on = True
     elif parts[1] == '/favicon.ico':
         pass
     else:
-        msg = parts[1][1:]
+        msg = parts[1][1:].replace('%20', ' ')
