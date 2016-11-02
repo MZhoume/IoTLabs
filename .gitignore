@@ -90,3 +90,7 @@ ENV/
 .ropeproject
 
 Keys.py
+Keys.ts
+node_modules
+www/lib
+typings
