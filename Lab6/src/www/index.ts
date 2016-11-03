@@ -1,6 +1,6 @@
 /// <reference path="../../typings/index.d.ts" />
 
-angular.module('app', ['ngRoute', 'ngHighcharts'])
+angular.module('app', ['ngRoute', 'nvd3'])
 .config(['$routeProvider', ($route: angular.route.IRouteProvider) => {
     $route
     .when('/', {
