@@ -5,9 +5,82 @@ from machine import PWM
 from machine import I2C
 from ssd1306 import SSD1306_I2C
 from time import sleep_ms
-from ad345 import AD345
+from machine import SPI
 import usocket as socket
+import ustruct
 import gc
+
+global cs, vcc, grnd, spi
+
+# Register constants for the ADXL345 accelerometer
+POWER_CTL = const(0x2D)
+DATA_FORMAT = const(0x31)
+DATAX0 = const(0x32)
+DATAX1 = const(0x33)
+DATAY0 = const(0x34)
+DATAY1 = const(0x35)
+DATAZ0 = const(0x36)
+DATAZ1 = const(0x37)
+
+# Write to the DATA_FORMAT register to set to 4g.
+# Write to POWER_CTL register to begin measurements
+def setup():
+    writeA(DATA_FORMAT, 0x01)
+    writeA(POWER_CTL, 0x08)
+
+# Write command/value to specified register
+def writeA(register, value):
+    global cs, vcc, grnd, spi
+
+    # Pack register and value into byte format
+    write_val = ustruct.pack('B',value)
+    write_reg_val = ustruct.pack('B',register)
+
+    # Pull line low and write to accelerometer
+    cs.value(0)
+    spi.write(write_reg_val)
+    spi.write(write_val)
+    cs.value(1)
+
+# Read value from a specified register
+def readA():
+    global cs, vcc, grnd, spi
+
+    # Set the R/W bit high to specify "read" mode
+    reg = DATAX0
+    reg = 0x80 | reg
+
+    # Set the MB bit high to specify that we want to
+    # do multi byte reads.
+    reg = reg | 0x40
+
+    # Pack R/W bit + MB bit + register value into byte format
+    write_reg_val = ustruct.pack('B',reg)
+
+    # Setup buffers for receiving data from the accelerometer.
+    x1 = bytearray(1)
+    x2 = bytearray(1)
+    y1 = bytearray(1)
+    y2 = bytearray(1)
+    z1 = bytearray(1)
+    z2 = bytearray(1)
+
+    # Read from all 6 accelerometer data registers, one address at a time
+    cs.value(0)
+    spi.write(write_reg_val)
+    spi.readinto(x1)
+    spi.readinto(x2)
+    spi.readinto(y1)
+    spi.readinto(y2)
+    spi.readinto(z1)
+    spi.readinto(z2)
+    cs.value(1)
+    
+    # Reconstruct the X, Y, Z axis readings from the received data.
+    x = (ustruct.unpack('b',x2)[0]<<8) | ustruct.unpack('b',x1)[0]
+    y = (ustruct.unpack('b',y2)[0]<<8) | ustruct.unpack('b',y1)[0]
+    z = (ustruct.unpack('b',z2)[0]<<8) | ustruct.unpack('b',z1)[0]
+    return (x,y,z)
 
 response = '''
 HTTP/1.1 200 OK\r\n
@@ -20,6 +93,7 @@ disp_wea = False
 disp_time = False
 msg = ''
 weather = ''
+omsg = ''
 
 temp_hh = 0
 temp_mm = 0
@@ -104,7 +178,13 @@ def btn_b_pressed(p):
             is_setting_alarm = False
 
 adc = ADC(0)
-acc = AD345()
+
+cs=Pin(16, Pin.OUT)
+spi = SPI(-1, baudrate=500000, polarity=1, phase=1, sck=Pin(14), mosi=Pin(13), miso=Pin(12))
+cs.value(0)
+cs.value(1)
+
+setup()
 
 piezo = PWM(Pin(15))
 piezo.freq(1000)
@@ -132,7 +212,8 @@ while True:
     print('looping...')
     client_s = s.accept()[0]
     req = client_s.recv(500)
-    x, y, z = acc.xyz()
+    x, y, z = readA()
+    print(x, y, z)
     client_s.send(response % (x, y, z))
     client_s.close()
     gc.collect()
@@ -150,13 +231,16 @@ while True:
         disp_wea = True
     elif parts[1] == '/remove%20weather':
         disp_wea = False
-    elif parts[1] == '/display%20tweet':
+    elif parts[1] == '/display%20message':
         disp_msg = True
-    elif parts[1] == '/remove%20tweet':
+    elif parts[1] == '/remove%20message':
         disp_msg = False
+    elif parts[1] == '/show%20last':
+        msg = omsg
     elif parts[1].startswith('/w/'):
         weather = parts[1][3:].replace('%20', ' ')
     elif parts[1].startswith('/t/'):
+        omsg = msg
         msg = parts[1][3:].replace('%20', ' ')
     else:
         pass
