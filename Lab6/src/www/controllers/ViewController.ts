@@ -20,6 +20,10 @@ interface IViewScope extends angular.IScope {
 }
 
 function updateData(httpSvc: IHttpService, scope: IViewScope) {
+    httpSvc.get('/get', {
+        onSuccess: (c, d) => {},
+        onError: (c, d) => {}
+    });
     httpSvc.get('/', {
         onSuccess: (c, d) => {
             scope.hasError = false;
@@ -49,7 +53,7 @@ function updateData(httpSvc: IHttpService, scope: IViewScope) {
     });
     setTimeout(() => {
         updateData(httpSvc, scope);
-    }, 1000);
+    }, 800);
 }
 
 class ViewCtrl {

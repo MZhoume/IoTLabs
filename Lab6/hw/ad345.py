@@ -1,3 +1,10 @@
+'''
+SDO -> MISO
+SDA -> MOSI
+CS -> any GPIO pin
+SCLK -> SCK
+'''
+
 from machine import SPI
 from machine import Pin
 from time import sleep_ms
@@ -23,7 +30,7 @@ ADXL345_ENABLE_MSRM_CONF = const(0x08)
 
 class AD345:
     def __init__(self):
-        self.cs_pin = Pin(0, Pin.OUT)
+        self.cs_pin = Pin(16, Pin.OUT)
         self.cs_pin.high()
         self.spi = SPI(-1, baudrate=2000000, polarity=1, phase=1, sck=Pin(14), mosi=Pin(13), miso=Pin(12))
 
@@ -36,6 +43,7 @@ class AD345:
             self.write_bytes(ADXL345_ENABLE_MSRM_ADDR, bytearray([ADXL345_ENABLE_MSRM_CONF]))
             self.sensitivity = 32
         else:
+            self.cs_pin.low()
             raise Exception('ADXL345 accelerometer not present')
 
     def convert_raw_to_g(self, x):

@@ -1,115 +1,205 @@
-from socket import getaddrinfo, socket
-from ussl import wrap_socket
-from Keys import *
-from json import loads
-import gc
-from machine import ADC
-from ad345 import AD345
-
-spi = AD345()
-adc = ADC(0)
-
-from machine import Timer
-
-x = 0
-y = 0
-z = 0
-
-def timer_callback(t):
-    x, y, z = spi.xyz()
-    addr = getaddrinfo('fit330b1q0.execute-api.us-east-1.amazonaws.com', 443)[0][-1]
-    s = socket()
-    s.connect(addr)
-    s = wrap_socket(s)
-    gc.collect()
-    reqstr = 'GET /lab6/add?x=%s&y=%s&z=%s HTTP/1.0\r\nHost: fit330b1q0.execute-api.us-east-1.amazonaws.com\r\n\r\n' % (x, y, z)
-    s.write(bytes(reqstr, 'utf-8'))
-    gc.collect()
-
-
-tim = Timer(-1)
-tim.init(period=1000, mode=Timer.PERIODIC, callback=timer_callback)
-
-
-addr = getaddrinfo('www.googleapis.com', 443)[0][-1]
-s = socket()
-s.connect(addr)
-gc.collect()
-s = wrap_socket(s)
-gc.collect()
-reqstr = 'POST /geolocation/v1/geolocate?key=%s HTTP/1.0\r\nHost: www.googleapis.com\r\nContent-Type: application/json\r\nContent-Length: 22\r\n\r\n{"considerIp": "true"}\r\n\r\n' % API_KEY
-s.write(bytes(reqstr, 'utf-8'))
-res = []
-gc.collect()
-while True:
-    data = s.read(100)
-    if data:
-        res.append(str(data, 'utf-8'))
-    else:
-        break
-
-s.close()
-gc.collect()
-res = ''.join(res)
-
-geoJson = loads(res[res.index('{'):])
-gc.collect()
-lat = geoJson['location']['lat']
-lng = geoJson['location']['lng']
-print('lat = %s, lng = %s' % (lat, lng))
-gc.collect()
-
-addr = getaddrinfo('api.openweathermap.org', 80)[0][-1]
-s = socket()
-s.connect(addr)
-gc.collect()
-reqstr = 'GET /data/2.5/weather?lat=%s&lon=%s&appid=%s HTTP/1.0\r\nHost: api.openweathermap.org\r\n\r\n' % (lat, lng, APP_ID)
-s.send(bytes(reqstr, 'utf-8'))
-res = []
-gc.collect()
-while True:
-    data = s.recv(100)
-    if data:
-        res.append(str(data, 'utf-8'))
-    else:
-        break
-
-s.close()
-gc.collect()
-res = ''.join(res)
-
-weaJson = loads(res[res.index('{'):])
-gc.collect()
-temp = float(weaJson['main']['temp']) - 273
-desc = weaJson['weather'][0]['description']
-print('temp = %s, desc = %s' % (temp, desc))
-gc.collect()
-
+from machine import RTC
 from machine import Pin
+from machine import ADC
+from machine import PWM
 from machine import I2C
 from ssd1306 import SSD1306_I2C
 from time import sleep_ms
+from ad345 import AD345
+import usocket as socket
+import gc
+
+response = '''
+HTTP/1.1 200 OK\r\n
+%f,%f,%f\r\n
+'''
+
+disp_on = False
+disp_msg = False
+disp_wea = False
+disp_time = False
+msg = ''
+weather = ''
+
+temp_hh = 0
+temp_mm = 0
+temp_ss = 0
+alarm_hh = 0
+alarm_mm = 0
+alarm_ss = 0
+
+is_setting_alarm = False
+is_setting_time = False
+part_changing = -1
+has_changed_time = False
+is_alarming = False
+
+def btn_a_pressed(p):
+    global part_changing
+    global has_changed_time
+    global is_setting_time
+    global is_setting_alarm
+    global temp_hh
+    global temp_mm
+    global temp_ss
+    global alarm_hh
+    global alarm_mm
+    global alarm_ss
+    global is_alarming
+    global piezo
+    global disp
+
+    if is_setting_alarm:
+        if part_changing == 0:
+            alarm_hh = (alarm_hh +1) % 24
+        elif part_changing == 1:
+            alarm_mm = (alarm_mm +1) % 60
+        elif part_changing == 2:
+            alarm_ss = (alarm_ss +1) % 60
+    elif is_alarming:
+        piezo.duty(0)
+        disp.invert(False)
+        disp.show()
+        is_alarming = False
+    else:
+        is_setting_time = True
+        part_changing = (part_changing + 1) % 6
+        if part_changing == 3:
+            part_changing = -1
+            is_setting_time = False
+            has_changed_time = True
+
+def btn_b_pressed(p):
+    global part_changing
+    global has_changed_time
+    global is_setting_alarm
+    global is_setting_time
+    global temp_hh
+    global temp_mm
+    global temp_ss
+    global alarm_hh
+    global alarm_mm
+    global alarm_ss
+    global is_alarming
+    global piezo
+    global disp
+
+    if is_setting_time:
+        if part_changing == 0:
+            temp_hh = (temp_hh +1) % 24
+        elif part_changing == 1:
+            temp_mm = (temp_mm +1) % 60
+        elif part_changing == 2:
+            temp_ss = (temp_ss +1) % 60
+    elif is_alarming:
+        piezo.duty(0)
+        disp.invert(False)
+        disp.show()
+        is_alarming = False
+    else:
+        is_setting_alarm = True
+        part_changing = (part_changing + 1) % 6
+        if part_changing == 3:
+            part_changing = -1
+            is_setting_alarm = False
+
+adc = ADC(0)
+acc = AD345()
+
+piezo = PWM(Pin(15))
+piezo.freq(1000)
+piezo.duty(0)
+
+rtc = RTC()
+rtc.datetime((2016, 1, 1, 0, 0, 0, 0, 0))
 
 disp = SSD1306_I2C(128, 32, I2C(scl=Pin(5), sda=Pin(4), freq=400000))
 disp.init_display()
 
-geoStr = 'G %.2f %.2f' % (lat, lng)
-weaStr = '%.2fC, %s' % (temp, desc)
-disp.text(geoStr, 0, 0)
-disp.text(weaStr, 0, 16)
-disp.show()
+btn_a = Pin(0, Pin.IN, Pin.PULL_UP)
+btn_a.irq(trigger=Pin.IRQ_RISING, handler=btn_a_pressed)
+btn_b = Pin(2, Pin.IN, Pin.PULL_UP)
+btn_b.irq(trigger=Pin.IRQ_RISING, handler=btn_b_pressed)
 
-print('tweeting')
-tweet_pending = False
-gc.collect()
-s = socket()
-addr = getaddrinfo('api.thingspeak.com', 443)[0][-1]
-s.connect(addr)
-s = wrap_socket(s)
-gc.collect()
-t = '{"api_key": "%s", "status": "The weather here is %.2fC. Conditions: %s."}' % (THINGTWEET_API_KEY, temp, desc)
-reqstr = 'POST /apps/thingtweet/1/statuses/update HTTP/1.0\r\nHost: api.thingspeak.com\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n%s\r\n\r\n' % (len(t), t)
-s.write(bytes(reqstr, 'utf-8'))
-s.close()
-gc.collect()
-print('tweeted')
+addr = socket.getaddrinfo("0.0.0.0", 80)[0][-1]
+s = socket.socket()
+s.bind(addr)
+s.listen(1)
+
+while True:
+    gc.collect()
+
+    print('looping...')
+    client_s = s.accept()[0]
+    req = client_s.recv(500)
+    x, y, z = acc.xyz()
+    client_s.send(response % (x, y, z))
+    client_s.close()
+    gc.collect()
+
+    parts = req.decode('ascii').split(' ')
+    if parts[1] == '/turn%20on':
+        disp_on = True
+    elif parts[1] == '/turn%20off':
+        disp_on = False
+    elif parts[1] == '/display%20time':
+        disp_time = True
+    elif parts[1] == '/remove%20time':
+        disp_time = False
+    elif parts[1] == '/display%20weather':
+        disp_wea = True
+    elif parts[1] == '/remove%20weather':
+        disp_wea = False
+    elif parts[1] == '/display%20tweet':
+        disp_msg = True
+    elif parts[1] == '/remove%20tweet':
+        disp_msg = False
+    elif parts[1].startswith('/w/'):
+        weather = parts[1][3:].replace('%20', ' ')
+    elif parts[1].startswith('/t/'):
+        msg = parts[1][3:].replace('%20', ' ')
+    else:
+        pass
+
+    if has_changed_time:
+        rtc.datetime(((2016, 1, 1, 0, temp_hh, temp_mm, temp_ss, 0)))
+        temp_hh = temp_mm = temp_ss = 0
+        has_changed_time = False
+
+    disp.fill(0)
+    if (not is_alarming) and disp_on:
+        if disp_wea:
+            disp.text(weather, 0, 16)
+        if disp_msg:
+            disp.text(msg, 0, 24)
+            
+        if disp_time:
+            y, m, d, t1, hh, mm, ss, t2 = rtc.datetime()
+            if not is_setting_alarm and (hh == alarm_hh and mm == alarm_mm and ss == alarm_ss):
+                piezo.duty(500)
+                disp.invert(True)
+                is_alarming = True
+            else:
+                if is_setting_alarm: 
+                    time = 'T: {}:{}:{} {}A'.format(alarm_hh if alarm_hh >= 10 else '0{}'.format(alarm_hh), 
+                        alarm_mm if alarm_mm >= 10 else '0{}'.format(alarm_mm), 
+                        alarm_ss if alarm_ss >= 10 else '0{}'.format(alarm_ss),
+                        '<' if part_changing < 3 else '')
+                elif is_setting_time:
+                    time = 'T: {}:{}:{} {}'.format(temp_hh if temp_hh >= 10 else '0{}'.format(temp_hh), 
+                        temp_mm if temp_mm >= 10 else '0{}'.format(temp_mm), 
+                        temp_ss if temp_ss >= 10 else '0{}'.format(temp_ss),
+                        '<' if part_changing < 3 else '')
+                else:
+                    time = 'Time: {}:{}:{}'.format(hh if hh >= 10 else '0{}'.format(hh), 
+                        mm if mm >= 10 else '0{}'.format(mm), 
+                        ss if ss >= 10 else '0{}'.format(ss))
+
+                disp.text(time, 0, 0)
+
+                if is_setting_time or is_setting_alarm:
+                    disp.text('^^', 24 * (part_changing % 3 + 1), 8)
+                
+        adc_val = adc.read()
+        disp.contrast(adc_val if adc_val < 1024 else adc_val - 1)
+    disp.show()

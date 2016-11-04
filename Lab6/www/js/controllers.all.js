@@ -1,6 +1,10 @@
 /// <reference path="../../../typings/index.d.ts" />
 /// <reference path="../services/HttpService.ts" />
 function updateData(httpSvc, scope) {
+    httpSvc.get('/get', {
+        onSuccess: function (c, d) { },
+        onError: function (c, d) { }
+    });
     httpSvc.get('/', {
         onSuccess: function (c, d) {
             scope.hasError = false;
@@ -29,7 +33,7 @@ function updateData(httpSvc, scope) {
     });
     setTimeout(function () {
         updateData(httpSvc, scope);
-    }, 1000);
+    }, 800);
 }
 var ViewCtrl = (function () {
     function ViewCtrl(_scope, _httpSvc) {
