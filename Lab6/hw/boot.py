@@ -10,7 +10,7 @@ webrepl.start()
 sta = WLAN(STA_IF)
 if not sta.isconnected():
     sta.active(True)
-    sta.connect('Paul', 'Paul@ZMMM')
+    sta.connect('Columbia University', '')
     while not sta.isconnected():
         pass
 
