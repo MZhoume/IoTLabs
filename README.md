@@ -1,12 +1,14 @@
-# **PLEASE PLEASE PLEASE: ALWAYS RUN CODE FIRST BEFORE SUBMIT TO COURSEWORK**
+# IoT Labs
+***
 
-# Lab 1
+## Lab 1
 
 #### Progress
 - [x] Blink SOS (Morse Code: ... --- ...)
 - [x] Blink 2 LEDs at different rate (Led 1: 100ms, Led 3: 1s)
+***
 
-# Lab 2
+## Lab 2
 
 #### Progress
 - [x] Control how much the LED should be lit
@@ -17,8 +19,9 @@
 - [x] Come up with a solution for the problem 2
 - [x] Set up the interrupt handler
 - [x] Debug
+***
 
-# Lab 3
+## Lab 3
 
 #### Progress
 - [x] Display on SSD1306
@@ -31,8 +34,9 @@
 - [x] Hook up ADXL345 and trying to get data
 - [x] Come up with the ways to scroll the text
 - [x] Make the text scroll according to the readouts from ADXL345
+***
 
-# Lab 4
+## Lab 4
 
 #### Progress
 - [x] Set up Google api and apikey
@@ -40,3 +44,15 @@
 - [x] HTTP Get from weather
 - [x] HTTP POST to google apis
 - [x] SSL wrapped socket
+***
+
+## Lab 5
+- [x] TACKLE memory issues
+- [x] Receive and process commands from internet using Socket
+- [x] Change time display and message sent from internet according to the command
+***
+
+## Lab 6
+- [x] Combine Lab 1 -- Lab 5 together for hardware, TACKLE memory issues
+- [x] Backend services for receiving and processing data sent from hardware
+- [x] Frontend views for visualizing data retrieved from the server
